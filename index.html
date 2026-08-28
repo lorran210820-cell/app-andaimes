@@ -22,7 +22,6 @@
             <label class="block text-sm font-medium text-slate-700">Nome do Encarregado</label>
             <select id="encarregado" required class="w-full mt-1 p-2 border rounded-lg bg-white">
                 <option value="" disabled selected>Selecione seu nome</option>
-                <!-- Lista gerada via JS -->
             </select>
         </div>
 
@@ -45,11 +44,9 @@
             <label class="block text-sm font-medium text-slate-700">Atividade</label>
             <select id="atividadeSelect" class="w-full mt-1 p-2 border rounded-lg bg-white">
                 <option value="" disabled selected>Selecione a atividade</option>
-                <!-- Lista gerada via JS -->
                 <option value="manual" class="font-bold text-blue-600">+ Digitar outra atividade...</option>
             </select>
             
-            <!-- Campo de texto para atividade manual (escondido por padrão) -->
             <input type="text" id="atividadeManual" class="w-full mt-2 p-2 border rounded-lg hidden" placeholder="Descreva a atividade...">
         </div>
 
@@ -90,12 +87,7 @@
         <button type="submit" class="w-full bg-blue-600 text-white p-3 rounded-lg font-bold hover:bg-blue-700 transition duration-150">Enviar Apontamento</button>
     </form>
 
-    <div class="mt-4 text-center mb-8">
-        <a href="painel.html" class="text-blue-600 underline text-sm">Ir para o Painel Web (Apenas Gestor)</a>
-    </div>
-
     <script>
-        // --- DADOS ---
         const encarregados = [
             "Cleber Sacramento Costa", "Edgenilson Reis dos Santos", "Denivaldo de Jesus Costa",
             "Ernande da Silva Bizerra", "Geciclei de Jesus Correa Marcena", "Giles da Silva",
@@ -104,7 +96,7 @@
             "Osmar Santos de Santana", "Manoel Luiz Silva Maciel", "Raimundo Costa Araujo",
             "Rogerio da Silva Sousa", "Antonio Tiago de Souza Conceicao",
             "Benedito Junior dos Santos Pinheiro", "Flavio Bispo dos Santos",
-            "Jose Carlos Assuncao Tele", "Andrewaldo Santos Cruz"
+            "Jose Carlos Assuncao Teles", "Andrewaldo Santos Cruz"
         ];
 
         const atividades = [
@@ -123,20 +115,12 @@
             "Montagem de Andaime - Cable Rack"
         ];
 
-        // --- INICIALIZAÇÃO ---
         const selectEncarregado = document.getElementById('encarregado');
-        encarregados.forEach(nome => {
-            const option = new Option(nome, nome);
-            selectEncarregado.add(option);
-        });
+        encarregados.forEach(nome => selectEncarregado.add(new Option(nome, nome)));
 
         const selectAtividade = document.getElementById('atividadeSelect');
-        atividades.forEach(ativ => {
-            const option = new Option(ativ, ativ);
-            selectAtividade.add(option, selectAtividade.options[selectAtividade.options.length - 1]); // Adiciona antes do 'manual'
-        });
+        atividades.forEach(ativ => selectAtividade.add(new Option(ativ, ativ), selectAtividade.options[selectAtividade.options.length - 1]));
 
-        // Mostrar campo de texto se escolher "manual"
         const inputManual = document.getElementById('atividadeManual');
         selectAtividade.addEventListener('change', function() {
             if (this.value === 'manual') {
@@ -149,15 +133,14 @@
             }
         });
 
-        // --- ENVIO (Simulado LocalStorage) ---
         document.getElementById('formApontamento').addEventListener('submit', function(e) {
             e.preventDefault();
             
-            // Lógica para pegar a atividade (selecionada ou manual)
             let atividadeFinal = selectAtividade.value;
-            if (atividadeFinal === 'manual') {
-                atividadeFinal = inputManual.value;
-            }
+            if (atividadeFinal === 'manual') atividadeFinal = inputManual.value;
+
+            // Salva a data no formato YYYY-MM-DD para facilitar o filtro exato
+            const dataIso = new Date().toISOString().split('T')[0];
 
             const novoDado = {
                 id: Date.now(),
@@ -169,18 +152,19 @@
                 faltas: document.getElementById('faltas').value,
                 folgas: document.getElementById('folgas').value,
                 materiais: document.getElementById('materiais').value,
+                dataIso: dataIso,
                 data: new Date().toLocaleDateString('pt-BR'),
                 hora: new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'})
             };
 
             let dadosSalvos = JSON.parse(localStorage.getItem('apontamentos')) || [];
-            // Remove apontamento anterior do mesmo encarregado no dia (para garantir 1 por dia)
-            dadosSalvos = dadosSalvos.filter(d => d.encarregado !== novoDado.encarregado || d.data !== novoDado.data);
+            dadosSalvos = dadosSalvos.filter(d => d.encarregado !== novoDado.encarregado || d.dataIso !== dataIso);
             dadosSalvos.push(novoDado);
             localStorage.setItem('apontamentos', JSON.stringify(dadosSalvos));
 
             alert('Apontamento enviado com sucesso!');
-            window.location.href = 'painel.html'; // Redireciona para ver o card
+            this.reset();
+            inputManual.classList.add('hidden');
         });
     </script>
 </body>
