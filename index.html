@@ -8,7 +8,6 @@
 </head>
 <body class="bg-slate-100 p-4 max-w-md mx-auto">
     
-    <!-- Logo da Empresa -->
     <div class="flex justify-center mb-6 mt-2">
         <img src="Logo.png" alt="Logo da Empresa" class="h-20 object-contain">
     </div>
@@ -17,7 +16,6 @@
     
     <form id="formApontamento" class="bg-white p-4 rounded-xl shadow-md space-y-4">
         
-        <!-- Seleção de Encarregado -->
         <div>
             <label class="block text-sm font-medium text-slate-700">Nome do Encarregado</label>
             <select id="encarregado" required class="w-full mt-1 p-2 border rounded-lg bg-white">
@@ -30,7 +28,6 @@
             <input type="text" id="local" required class="w-full mt-1 p-2 border rounded-lg" placeholder="Ex: Área 40 - Moega">
         </div>
 
-        <!-- Tipo -->
         <div>
             <label class="block text-sm font-medium text-slate-700">Tipo de Atividade</label>
             <select id="tipo" class="w-full mt-1 p-2 border rounded-lg bg-white">
@@ -39,18 +36,15 @@
             </select>
         </div>
 
-        <!-- Seleção de Atividade Planejada OU Manual -->
         <div>
             <label class="block text-sm font-medium text-slate-700">Atividade</label>
             <select id="atividadeSelect" class="w-full mt-1 p-2 border rounded-lg bg-white">
                 <option value="" disabled selected>Selecione a atividade</option>
                 <option value="manual" class="font-bold text-blue-600">+ Digitar outra atividade...</option>
             </select>
-            
             <input type="text" id="atividadeManual" class="w-full mt-2 p-2 border rounded-lg hidden" placeholder="Descreva a atividade...">
         </div>
 
-        <!-- Efetivo -->
         <div class="grid grid-cols-3 gap-2 bg-slate-50 p-2 rounded-lg border">
             <div>
                 <label class="block text-xs font-medium text-slate-700">Pessoas Total</label>
@@ -66,25 +60,24 @@
             </div>
         </div>
 
-        <!-- Materiais -->
         <div>
             <label class="block text-sm font-medium text-slate-700">Materiais Principais (Qtd)</label>
             <textarea id="materiais" rows="3" class="w-full mt-1 p-2 border rounded-lg" placeholder="Ex: Tubo 6m: 50, Abrac. Fixa: 100"></textarea>
         </div>
 
-        <!-- Fotos -->
+        <!-- Adicionado um aviso (opcional) de que a foto pode demorar 1 segundinho para comprimir -->
         <div class="grid grid-cols-2 gap-2">
             <div>
                 <label class="block text-xs font-medium text-slate-700">Foto ANTES</label>
-                <input type="file" id="fotoAntes" accept="image/*" capture="environment" class="w-full mt-1 text-sm border p-1 rounded bg-white">
+                <input type="file" id="fotoAntes" accept="image/*" capture="environment" class="w-full mt-1 text-xs border p-1 rounded bg-white text-slate-600">
             </div>
             <div>
                 <label class="block text-xs font-medium text-slate-700">Foto DEPOIS</label>
-                <input type="file" id="fotoDepois" accept="image/*" capture="environment" class="w-full mt-1 text-sm border p-1 rounded bg-white">
+                <input type="file" id="fotoDepois" accept="image/*" capture="environment" class="w-full mt-1 text-xs border p-1 rounded bg-white text-slate-600">
             </div>
         </div>
 
-        <button type="submit" class="w-full bg-blue-600 text-white p-3 rounded-lg font-bold hover:bg-blue-700 transition duration-150">Enviar Apontamento</button>
+        <button type="submit" id="btnEnviar" class="w-full bg-blue-600 text-white p-3 rounded-lg font-bold hover:bg-blue-700 transition duration-150">Enviar Apontamento</button>
     </form>
 
     <script>
@@ -133,14 +126,46 @@
             }
         });
 
-        document.getElementById('formApontamento').addEventListener('submit', function(e) {
+        // Função mágica para reduzir a foto para não travar o teste no GitHub Pages
+        function processarFoto(file) {
+            return new Promise((resolve) => {
+                if (!file) return resolve(null);
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = (event) => {
+                    const img = new Image();
+                    img.src = event.target.result;
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        const maxWidth = 800; // Define largura máxima da foto
+                        const scale = maxWidth / img.width;
+                        canvas.width = maxWidth;
+                        canvas.height = img.height * scale;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                        resolve(canvas.toDataURL('image/jpeg', 0.6)); // Qualidade de 60%
+                    };
+                };
+            });
+        }
+
+        // Alterado para 'async' para esperar a foto ser processada
+        document.getElementById('formApontamento').addEventListener('submit', async function(e) {
             e.preventDefault();
             
+            const btn = document.getElementById('btnEnviar');
+            btn.innerText = 'Processando e Enviando...';
+            btn.classList.add('opacity-70');
+            btn.disabled = true;
+
             let atividadeFinal = selectAtividade.value;
             if (atividadeFinal === 'manual') atividadeFinal = inputManual.value;
 
-            // Salva a data no formato YYYY-MM-DD para facilitar o filtro exato
             const dataIso = new Date().toISOString().split('T')[0];
+
+            // Pega os arquivos de foto se tiverem sido selecionados
+            const fotoAntes = await processarFoto(document.getElementById('fotoAntes').files[0]);
+            const fotoDepois = await processarFoto(document.getElementById('fotoDepois').files[0]);
 
             const novoDado = {
                 id: Date.now(),
@@ -152,6 +177,8 @@
                 faltas: document.getElementById('faltas').value,
                 folgas: document.getElementById('folgas').value,
                 materiais: document.getElementById('materiais').value,
+                fotoAntes: fotoAntes,
+                fotoDepois: fotoDepois,
                 dataIso: dataIso,
                 data: new Date().toLocaleDateString('pt-BR'),
                 hora: new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'})
@@ -160,11 +187,19 @@
             let dadosSalvos = JSON.parse(localStorage.getItem('apontamentos')) || [];
             dadosSalvos = dadosSalvos.filter(d => d.encarregado !== novoDado.encarregado || d.dataIso !== dataIso);
             dadosSalvos.push(novoDado);
-            localStorage.setItem('apontamentos', JSON.stringify(dadosSalvos));
+            
+            try {
+                localStorage.setItem('apontamentos', JSON.stringify(dadosSalvos));
+                alert('Apontamento enviado com sucesso!');
+                this.reset();
+                inputManual.classList.add('hidden');
+            } catch (err) {
+                alert('Erro: Memória do navegador cheia! Limpe os apontamentos antigos ou teste com fotos menores.');
+            }
 
-            alert('Apontamento enviado com sucesso!');
-            this.reset();
-            inputManual.classList.add('hidden');
+            btn.innerText = 'Enviar Apontamento';
+            btn.classList.remove('opacity-70');
+            btn.disabled = false;
         });
     </script>
 </body>
