@@ -60,12 +60,16 @@
             </div>
         </div>
 
-        <div>
-            <label class="block text-sm font-medium text-slate-700">Materiais Principais (Qtd)</label>
-            <textarea id="materiais" rows="3" class="w-full mt-1 p-2 border rounded-lg" placeholder="Ex: Tubo 6m: 50, Abrac. Fixa: 100"></textarea>
+        <!-- Relação Pronta de Materiais (Apenas preencher a quantidade) -->
+        <div class="border p-3 rounded-lg bg-slate-50 space-y-3">
+            <label class="block text-sm font-bold text-slate-700">Quantidade de Materiais Utilizados</label>
+            <p class="text-xs text-slate-500">Insira a quantidade usada para cada item necessário:</p>
+            
+            <div id="containerGradeMateriais" class="space-y-2 max-h-60 overflow-y-auto pr-1">
+                <!-- Gerado via JavaScript -->
+            </div>
         </div>
 
-        <!-- Adicionado um aviso (opcional) de que a foto pode demorar 1 segundinho para comprimir -->
         <div class="grid grid-cols-2 gap-2">
             <div>
                 <label class="block text-xs font-medium text-slate-700">Foto ANTES</label>
@@ -108,11 +112,33 @@
             "Montagem de Andaime - Cable Rack"
         ];
 
+        // Lista completa com tubos de 0,50 até 6,00 e acessórios
+        const catalogoMateriais = [
+            "Tubo 0,50m", "Tubo 0,75m", "Tubo 1,00m", "Tubo 1,25m", "Tubo 1,50m",
+            "Tubo 1,75m", "Tubo 2,00m", "Tubo 2,25m", "Tubo 2,50m", "Tubo 2,75m",
+            "Tubo 3,00m", "Tubo 3,25m", "Tubo 3,50m", "Tubo 3,75m", "Tubo 4,00m",
+            "Tubo 4,25m", "Tubo 4,50m", "Tubo 4,75m", "Tubo 5,00m", "Tubo 5,25m",
+            "Tubo 5,50m", "Tubo 5,75m", "Tubo 6,00m",
+            "Braçadeira Fixa", "Braçadeira Giratória", "Luva de Emenda", 
+            "Sapata Ajustável", "Prancha Metálica", "Escada Metálica"
+        ];
+
+        // Popular selects e grade de materiais
         const selectEncarregado = document.getElementById('encarregado');
         encarregados.forEach(nome => selectEncarregado.add(new Option(nome, nome)));
 
         const selectAtividade = document.getElementById('atividadeSelect');
         atividades.forEach(ativ => selectAtividade.add(new Option(ativ, ativ), selectAtividade.options[selectAtividade.options.length - 1]));
+
+        const containerGrade = document.getElementById('containerGradeMateriais');
+        catalogoMateriais.forEach((mat, idx) => {
+            containerGrade.innerHTML += `
+                <div class="flex justify-between items-center bg-white p-2 border rounded-lg text-xs">
+                    <span class="font-medium text-slate-700 w-3/5">${mat}</span>
+                    <input type="number" min="0" value="0" data-material="${mat}" class="input-qtd w-2/5 p-1 border rounded text-center bg-slate-50 font-bold">
+                </div>
+            `;
+        });
 
         const inputManual = document.getElementById('atividadeManual');
         selectAtividade.addEventListener('change', function() {
@@ -126,7 +152,6 @@
             }
         });
 
-        // Função mágica para reduzir a foto para não travar o teste no GitHub Pages
         function processarFoto(file) {
             return new Promise((resolve) => {
                 if (!file) return resolve(null);
@@ -137,22 +162,39 @@
                     img.src = event.target.result;
                     img.onload = () => {
                         const canvas = document.createElement('canvas');
-                        const maxWidth = 800; // Define largura máxima da foto
+                        const maxWidth = 800;
                         const scale = maxWidth / img.width;
                         canvas.width = maxWidth;
                         canvas.height = img.height * scale;
                         const ctx = canvas.getContext('2d');
                         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                        resolve(canvas.toDataURL('image/jpeg', 0.6)); // Qualidade de 60%
+                        resolve(canvas.toDataURL('image/jpeg', 0.6));
                     };
                 };
             });
         }
 
-        // Alterado para 'async' para esperar a foto ser processada
         document.getElementById('formApontamento').addEventListener('submit', async function(e) {
             e.preventDefault();
             
+            // Coleta apenas os materiais que têm quantidade maior que zero
+            const inputs = document.querySelectorAll('.input-qtd');
+            let materiaisPreenchidos = [];
+            
+            inputs.forEach(input => {
+                const qtd = parseInt(input.value) || 0;
+                if (qtd > 0) {
+                    materiaisPreenchidos.push({
+                        nome: input.getAttribute('data-material'),
+                        quantidade: qtd
+                    });
+                }
+            });
+
+            if (materiaisPreenchidos.length === 0) {
+                return alert('Informe a quantidade de pelo menos um material utilizado.');
+            }
+
             const btn = document.getElementById('btnEnviar');
             btn.innerText = 'Processando e Enviando...';
             btn.classList.add('opacity-70');
@@ -162,8 +204,6 @@
             if (atividadeFinal === 'manual') atividadeFinal = inputManual.value;
 
             const dataIso = new Date().toISOString().split('T')[0];
-
-            // Pega os arquivos de foto se tiverem sido selecionados
             const fotoAntes = await processarFoto(document.getElementById('fotoAntes').files[0]);
             const fotoDepois = await processarFoto(document.getElementById('fotoDepois').files[0]);
 
@@ -176,7 +216,7 @@
                 pessoas: document.getElementById('pessoas').value,
                 faltas: document.getElementById('faltas').value,
                 folgas: document.getElementById('folgas').value,
-                materiais: document.getElementById('materiais').value,
+                materiaisLista: materiaisPreenchidos,
                 fotoAntes: fotoAntes,
                 fotoDepois: fotoDepois,
                 dataIso: dataIso,
@@ -192,9 +232,10 @@
                 localStorage.setItem('apontamentos', JSON.stringify(dadosSalvos));
                 alert('Apontamento enviado com sucesso!');
                 this.reset();
+                inputs.forEach(i => i.value = 0);
                 inputManual.classList.add('hidden');
             } catch (err) {
-                alert('Erro: Memória do navegador cheia! Limpe os apontamentos antigos ou teste com fotos menores.');
+                alert('Erro: Memória cheia!');
             }
 
             btn.innerText = 'Enviar Apontamento';
