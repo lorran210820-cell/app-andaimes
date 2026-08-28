@@ -7,81 +7,180 @@
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 </head>
 <body class="bg-slate-100 p-4 max-w-md mx-auto">
+    
+    <!-- Logo da Empresa -->
+    <div class="flex justify-center mb-6 mt-2">
+        <img src="Logo.png" alt="Logo da Empresa" class="h-20 object-contain">
+    </div>
+
     <h1 class="text-xl font-bold text-slate-800 mb-4 text-center">Apontamento Diário</h1>
     
     <form id="formApontamento" class="bg-white p-4 rounded-xl shadow-md space-y-4">
+        
+        <!-- Seleção de Encarregado -->
         <div>
             <label class="block text-sm font-medium text-slate-700">Nome do Encarregado</label>
-            <input type="text" id="encarregado" required class="w-full mt-1 p-2 border rounded-lg">
+            <select id="encarregado" required class="w-full mt-1 p-2 border rounded-lg bg-white">
+                <option value="" disabled selected>Selecione seu nome</option>
+                <!-- Lista gerada via JS -->
+            </select>
         </div>
 
         <div>
             <label class="block text-sm font-medium text-slate-700">Local de Trabalho</label>
-            <input type="text" id="local" required class="w-full mt-1 p-2 border rounded-lg">
+            <input type="text" id="local" required class="w-full mt-1 p-2 border rounded-lg" placeholder="Ex: Área 40 - Moega">
         </div>
 
+        <!-- Tipo -->
         <div>
             <label class="block text-sm font-medium text-slate-700">Tipo de Atividade</label>
-            <select id="tipo" class="w-full mt-1 p-2 border rounded-lg">
+            <select id="tipo" class="w-full mt-1 p-2 border rounded-lg bg-white">
                 <option value="Montagem">Montagem</option>
                 <option value="Desmontagem">Desmontagem</option>
             </select>
         </div>
 
-        <div class="grid grid-cols-3 gap-2">
+        <!-- Seleção de Atividade Planejada OU Manual -->
+        <div>
+            <label class="block text-sm font-medium text-slate-700">Atividade</label>
+            <select id="atividadeSelect" class="w-full mt-1 p-2 border rounded-lg bg-white">
+                <option value="" disabled selected>Selecione a atividade</option>
+                <!-- Lista gerada via JS -->
+                <option value="manual" class="font-bold text-blue-600">+ Digitar outra atividade...</option>
+            </select>
+            
+            <!-- Campo de texto para atividade manual (escondido por padrão) -->
+            <input type="text" id="atividadeManual" class="w-full mt-2 p-2 border rounded-lg hidden" placeholder="Descreva a atividade...">
+        </div>
+
+        <!-- Efetivo -->
+        <div class="grid grid-cols-3 gap-2 bg-slate-50 p-2 rounded-lg border">
             <div>
-                <label class="block text-xs font-medium text-slate-700">Pessoas</label>
-                <input type="number" id="pessoas" value="0" class="w-full mt-1 p-2 border rounded-lg text-center">
+                <label class="block text-xs font-medium text-slate-700">Pessoas Total</label>
+                <input type="number" id="pessoas" value="0" min="0" class="w-full mt-1 p-2 border rounded-lg text-center bg-white">
             </div>
             <div>
                 <label class="block text-xs font-medium text-slate-700">Faltas</label>
-                <input type="number" id="faltas" value="0" class="w-full mt-1 p-2 border rounded-lg text-center">
+                <input type="number" id="faltas" value="0" min="0" class="w-full mt-1 p-2 border rounded-lg text-center bg-white">
             </div>
             <div>
-                <label class="block text-xs font-medium text-slate-700">Folgas</label>
-                <input type="number" id="folgas" value="0" class="w-full mt-1 p-2 border rounded-lg text-center">
+                <label class="block text-xs font-medium text-slate-700">Folgas/CT</label>
+                <input type="number" id="folgas" value="0" min="0" class="w-full mt-1 p-2 border rounded-lg text-center bg-white">
             </div>
         </div>
 
+        <!-- Materiais -->
         <div>
-            <label class="block text-sm font-medium text-slate-700">Materiais Utilizados (Ex: Tubo 6m: 20)</label>
-            <textarea id="materiais" rows="2" class="w-full mt-1 p-2 border rounded-lg"></textarea>
+            <label class="block text-sm font-medium text-slate-700">Materiais Principais (Qtd)</label>
+            <textarea id="materiais" rows="3" class="w-full mt-1 p-2 border rounded-lg" placeholder="Ex: Tubo 6m: 50, Abrac. Fixa: 100"></textarea>
         </div>
 
-        <div>
-            <label class="block text-sm font-medium text-slate-700">Foto (Antes / Depois)</label>
-            <input type="file" id="foto" accept="image/*" class="w-full mt-1 text-sm">
+        <!-- Fotos -->
+        <div class="grid grid-cols-2 gap-2">
+            <div>
+                <label class="block text-xs font-medium text-slate-700">Foto ANTES</label>
+                <input type="file" id="fotoAntes" accept="image/*" capture="environment" class="w-full mt-1 text-sm border p-1 rounded bg-white">
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-700">Foto DEPOIS</label>
+                <input type="file" id="fotoDepois" accept="image/*" capture="environment" class="w-full mt-1 text-sm border p-1 rounded bg-white">
+            </div>
         </div>
 
-        <button type="submit" class="w-full bg-blue-600 text-white p-3 rounded-lg font-bold hover:bg-blue-700">Enviar Apontamento</button>
+        <button type="submit" class="w-full bg-blue-600 text-white p-3 rounded-lg font-bold hover:bg-blue-700 transition duration-150">Enviar Apontamento</button>
     </form>
 
-    <div class="mt-4 text-center">
-        <a href="painel.html" class="text-blue-600 underline text-sm">Ir para o Painel Web (Notebook)</a>
+    <div class="mt-4 text-center mb-8">
+        <a href="painel.html" class="text-blue-600 underline text-sm">Ir para o Painel Web (Apenas Gestor)</a>
     </div>
 
     <script>
+        // --- DADOS ---
+        const encarregados = [
+            "Cleber Sacramento Costa", "Edgenilson Reis dos Santos", "Denivaldo de Jesus Costa",
+            "Ernande da Silva Bizerra", "Geciclei de Jesus Correa Marcena", "Giles da Silva",
+            "Juzuel Coelho dos Santos", "Nadson Pinheiro", "Pedro Marcio Barbosa da Silva",
+            "Leoncio Martins da Silva Filho", "Luis Carlos de Sousa Nascimento", "Adriano Santos de Pinho",
+            "Osmar Santos de Santana", "Manoel Luiz Silva Maciel", "Raimundo Costa Araujo",
+            "Rogerio da Silva Sousa", "Antonio Tiago de Souza Conceicao",
+            "Benedito Junior dos Santos Pinheiro", "Flavio Bispo dos Santos",
+            "Jose Carlos Assuncao Tele", "Andrewaldo Santos Cruz"
+        ];
+
+        const atividades = [
+            "Finalização da Escadas", "Montagem da CWA 297", "Montagem da Plataforma da CWP 004",
+            "Montagem da Plataforma da CWP 003", "Apoio Geral Noturno", "Apoio a Tubulação",
+            "Montagem de Andaime para Montagem dos Contraventamentos entre as Filas",
+            "Montagem de andaime para montagem da Plataforma 2.2",
+            "Andaime para Pré Montagem do Silo Inferior 03 @ 04 - Montagem das Chapas Internas de Desgastes",
+            "Andaime para Pré Montagem do Silo Intermediário 04, 06, 08, 09, 11 e 13 - Desmontagem dos Dispositivos de Içamento",
+            "Andaime para Pré Montagem do Silo Intermediário 08 e 09 - Desmontagem dos Dispositivos de Içamento",
+            "Andaime para Atendimento a montagem Eletromecânica das TRs",
+            "Montagem de Andaime no Interno e Externo dos Silos - 06, 07 e 09",
+            "Montagem de Andaime nas Peneiras - EL.302 e 306",
+            "Andaime para Infra Elétrica de Iluminação", "Adequação de Andaimes - Cable Rack",
+            "Apoio Geral a Elétrica", "Adequação de Andaimes no Fechamento de Leitos com Cable Rack",
+            "Montagem de Andaime - Cable Rack"
+        ];
+
+        // --- INICIALIZAÇÃO ---
+        const selectEncarregado = document.getElementById('encarregado');
+        encarregados.forEach(nome => {
+            const option = new Option(nome, nome);
+            selectEncarregado.add(option);
+        });
+
+        const selectAtividade = document.getElementById('atividadeSelect');
+        atividades.forEach(ativ => {
+            const option = new Option(ativ, ativ);
+            selectAtividade.add(option, selectAtividade.options[selectAtividade.options.length - 1]); // Adiciona antes do 'manual'
+        });
+
+        // Mostrar campo de texto se escolher "manual"
+        const inputManual = document.getElementById('atividadeManual');
+        selectAtividade.addEventListener('change', function() {
+            if (this.value === 'manual') {
+                inputManual.classList.remove('hidden');
+                inputManual.required = true;
+            } else {
+                inputManual.classList.add('hidden');
+                inputManual.required = false;
+                inputManual.value = '';
+            }
+        });
+
+        // --- ENVIO (Simulado LocalStorage) ---
         document.getElementById('formApontamento').addEventListener('submit', function(e) {
             e.preventDefault();
             
+            // Lógica para pegar a atividade (selecionada ou manual)
+            let atividadeFinal = selectAtividade.value;
+            if (atividadeFinal === 'manual') {
+                atividadeFinal = inputManual.value;
+            }
+
             const novoDado = {
                 id: Date.now(),
-                encarregado: document.getElementById('encarregado').value,
+                encarregado: selectEncarregado.value,
                 local: document.getElementById('local').value,
                 tipo: document.getElementById('tipo').value,
+                atividade: atividadeFinal,
                 pessoas: document.getElementById('pessoas').value,
                 faltas: document.getElementById('faltas').value,
                 folgas: document.getElementById('folgas').value,
                 materiais: document.getElementById('materiais').value,
-                data: new Date().toLocaleDateString('pt-BR')
+                data: new Date().toLocaleDateString('pt-BR'),
+                hora: new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'})
             };
 
             let dadosSalvos = JSON.parse(localStorage.getItem('apontamentos')) || [];
+            // Remove apontamento anterior do mesmo encarregado no dia (para garantir 1 por dia)
+            dadosSalvos = dadosSalvos.filter(d => d.encarregado !== novoDado.encarregado || d.data !== novoDado.data);
             dadosSalvos.push(novoDado);
             localStorage.setItem('apontamentos', JSON.stringify(dadosSalvos));
 
             alert('Apontamento enviado com sucesso!');
-            this.reset();
+            window.location.href = 'painel.html'; // Redireciona para ver o card
         });
     </script>
 </body>
