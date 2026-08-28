@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apontamento de Andaimes</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+</head>
+<body class="bg-slate-100 p-4 max-w-md mx-auto">
+    <h1 class="text-xl font-bold text-slate-800 mb-4 text-center">Apontamento Diário</h1>
+    
+    <form id="formApontamento" class="bg-white p-4 rounded-xl shadow-md space-y-4">
+        <div>
+            <label class="block text-sm font-medium text-slate-700">Nome do Encarregado</label>
+            <input type="text" id="encarregado" required class="w-full mt-1 p-2 border rounded-lg">
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium text-slate-700">Local de Trabalho</label>
+            <input type="text" id="local" required class="w-full mt-1 p-2 border rounded-lg">
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium text-slate-700">Tipo de Atividade</label>
+            <select id="tipo" class="w-full mt-1 p-2 border rounded-lg">
+                <option value="Montagem">Montagem</option>
+                <option value="Desmontagem">Desmontagem</option>
+            </select>
+        </div>
+
+        <div class="grid grid-cols-3 gap-2">
+            <div>
+                <label class="block text-xs font-medium text-slate-700">Pessoas</label>
+                <input type="number" id="pessoas" value="0" class="w-full mt-1 p-2 border rounded-lg text-center">
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-700">Faltas</label>
+                <input type="number" id="faltas" value="0" class="w-full mt-1 p-2 border rounded-lg text-center">
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-700">Folgas</label>
+                <input type="number" id="folgas" value="0" class="w-full mt-1 p-2 border rounded-lg text-center">
+            </div>
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium text-slate-700">Materiais Utilizados (Ex: Tubo 6m: 20)</label>
+            <textarea id="materiais" rows="2" class="w-full mt-1 p-2 border rounded-lg"></textarea>
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium text-slate-700">Foto (Antes / Depois)</label>
+            <input type="file" id="foto" accept="image/*" class="w-full mt-1 text-sm">
+        </div>
+
+        <button type="submit" class="w-full bg-blue-600 text-white p-3 rounded-lg font-bold hover:bg-blue-700">Enviar Apontamento</button>
+    </form>
+
+    <div class="mt-4 text-center">
+        <a href="painel.html" class="text-blue-600 underline text-sm">Ir para o Painel Web (Notebook)</a>
+    </div>
+
+    <script>
+        document.getElementById('formApontamento').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const novoDado = {
+                id: Date.now(),
+                encarregado: document.getElementById('encarregado').value,
+                local: document.getElementById('local').value,
+                tipo: document.getElementById('tipo').value,
+                pessoas: document.getElementById('pessoas').value,
+                faltas: document.getElementById('faltas').value,
+                folgas: document.getElementById('folgas').value,
+                materiais: document.getElementById('materiais').value,
+                data: new Date().toLocaleDateString('pt-BR')
+            };
+
+            let dadosSalvos = JSON.parse(localStorage.getItem('apontamentos')) || [];
+            dadosSalvos.push(novoDado);
+            localStorage.setItem('apontamentos', JSON.stringify(dadosSalvos));
+
+            alert('Apontamento enviado com sucesso!');
+            this.reset();
+        });
+    </script>
+</body>
+</html>
