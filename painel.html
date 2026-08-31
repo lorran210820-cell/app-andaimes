@@ -7,7 +7,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 </head>
 <body class="bg-slate-100 p-6">
-    
+
     <div class="flex flex-col md:flex-row justify-between items-center mb-8 border-b pb-4 bg-white p-4 rounded-lg shadow-sm gap-4">
         <div class="flex items-center gap-4">
             <img src="Logo.png" alt="Logo da Empresa" class="h-16 object-contain" onerror="this.style.display='none'">
@@ -19,12 +19,11 @@
                 <label for="filtroData" class="text-xs font-semibold text-slate-600">Filtrar Data:</label>
                 <input type="date" id="filtroData" class="bg-white border rounded px-2 py-1 text-sm font-medium text-slate-800" onchange="carregarCards()">
             </div>
-            
-            <!-- Botões para a Apresentação -->
+
             <button onclick="exportarJson()" class="bg-indigo-600 text-white px-3 py-2 rounded-lg text-sm font-semibold hover:bg-indigo-700 transition">
                 ⬇️ Baixar Backup (JSON)
             </button>
-            
+
             <label for="importJson" class="bg-blue-600 text-white px-3 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 transition cursor-pointer">
                 ⬆️ Carregar Apontamentos
             </label>
@@ -49,21 +48,17 @@
         const hojeIso = new Date().toISOString().split('T')[0];
         document.getElementById('filtroData').value = hojeIso;
 
-        // Função de cálculo de peso aproximado
         function calcularPesoAproximado(materiaisLista) {
             if (!materiaisLista || materiaisLista.length === 0) return 0;
-            
             let pesoTotal = 0;
             materiaisLista.forEach(item => {
                 const nome = item.nome.toLowerCase();
                 const qtd = parseInt(item.quantidade) || 0;
-
                 if (nome.includes('tubo')) {
                     const matchMetros = item.nome.match(/(\d+,\d+|\d+)/);
                     if (matchMetros) {
                         const metros = parseFloat(matchMetros[0].replace(',', '.'));
-                        const pesoTubo = metros * 3.40;
-                        pesoTotal += pesoTubo * qtd;
+                        pesoTotal += (metros * 3.40) * qtd;
                     }
                 } else {
                     pesoTotal += 0.90 * qtd;
@@ -76,7 +71,7 @@
             const grid = document.getElementById('gridCards');
             const dataSelecionada = document.getElementById('filtroData').value; 
             const dados = JSON.parse(localStorage.getItem('apontamentos')) || [];
-            
+
             const dadosFiltrados = dados.filter(d => {
                 if (d.dataIso) return d.dataIso === dataSelecionada;
                 return true; 
@@ -146,51 +141,125 @@
 
             modalConteudo.innerHTML = `
                 <h2 class="text-xl font-bold text-slate-800 border-b pb-2">${item.encarregado}</h2>
-                
                 <div class="grid grid-cols-2 gap-4 text-sm text-slate-700 bg-slate-50 p-3 rounded-lg">
                     <p><strong>Data:</strong> ${item.data}</p>
                     <p><strong>Hora:</strong> ${item.hora || 'N/A'}</p>
                     <p><strong>Tipo:</strong> ${item.tipo}</p>
                     <p><strong>Local:</strong> ${item.local}</p>
                 </div>
-                
                 <div>
                     <p class="text-xs font-semibold text-slate-500 uppercase">Atividade Realizada</p>
                     <p class="text-sm font-medium text-slate-800 bg-white border p-2 rounded mt-1">${item.atividade}</p>
                 </div>
-                
                 <div class="grid grid-cols-3 gap-2 text-center text-sm">
                     <div class="bg-blue-50 p-2 rounded border">Pessoas: <strong>${item.pessoas}</strong></div>
                     <div class="bg-red-50 p-2 rounded border">Faltas: <strong>${item.faltas}</strong></div>
                     <div class="bg-amber-50 p-2 rounded border">Folgas/CT: <strong>${item.folgas}</strong></div>
                 </div>
-
                 <div class="bg-blue-50 border border-blue-200 p-3 rounded-lg flex justify-between items-center">
-                    <span class="text-xs font-bold text-blue-900 uppercase">Peso Total Estimado do Andaime:</span>
+                    <span class="text-xs font-bold text-blue-900 uppercase">Peso Total Estimado:</span>
                     <span class="text-lg font-extrabold text-blue-700">${pesoCalc.toFixed(2)} kg</span>
                 </div>
-                
                 <div>
                     <p class="text-xs font-semibold text-slate-500 uppercase mb-1">Materiais Utilizados</p>
                     <div class="bg-slate-50 border p-2 rounded">${htmlMateriais}</div>
                 </div>
-
                 <div class="mt-4 pt-4 border-t">
                     <p class="text-xs font-semibold text-slate-500 uppercase mb-2">Evidências Fotográficas</p>
                     <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <p class="text-center text-xs text-slate-600 mb-1 font-semibold">Antes</p>
-                            ${divFotoAntes}
-                        </div>
-                        <div>
-                            <p class="text-center text-xs text-slate-600 mb-1 font-semibold">Depois</p>
-                            ${divFotoDepois}
-                        </div>
+                        <div><p class="text-center text-xs text-slate-600 mb-1 font-semibold">Antes</p>${divFotoAntes}</div>
+                        <div><p class="text-center text-xs text-slate-600 mb-1 font-semibold">Depois</p>${divFotoDepois}</div>
                     </div>
+                </div>
+                <!-- BOTOES DE EDICAO E EXCLUSAO -->
+                <div class="mt-6 flex justify-end gap-3 border-t pt-4">
+                    <button onclick="iniciarEdicao(${item.id})" class="bg-amber-500 text-white px-4 py-2 rounded shadow hover:bg-amber-600 transition">✏️ Editar</button>
+                    <button onclick="deletarApontamento(${item.id})" class="bg-red-600 text-white px-4 py-2 rounded shadow hover:bg-red-700 transition">🗑️ Excluir</button>
                 </div>
             `;
             modal.classList.remove('hidden');
             modal.classList.add('flex');
+        }
+
+        // --- FUNÇÃO DE DELETAR ---
+        function deletarApontamento(id) {
+            if(confirm("Tem certeza que deseja excluir este apontamento? Esta ação não pode ser desfeita.")) {
+                let dados = JSON.parse(localStorage.getItem('apontamentos')) || [];
+                dados = dados.filter(d => d.id !== id);
+                localStorage.setItem('apontamentos', JSON.stringify(dados));
+                fecharModal();
+                carregarCards();
+            }
+        }
+
+        // --- FUNÇÃO DE EDIÇÃO (MODO INLINE NO MODAL) ---
+        function iniciarEdicao(id) {
+            const dados = JSON.parse(localStorage.getItem('apontamentos')) || [];
+            const item = dados.find(d => d.id === id);
+            if (!item) return;
+
+            modalConteudo.innerHTML = `
+                <h2 class="text-xl font-bold text-slate-800 border-b pb-2 mb-4">Editar Apontamento</h2>
+                <div class="space-y-3 text-sm">
+                    <div>
+                        <label class="block font-semibold text-slate-700">Encarregado</label>
+                        <input type="text" id="edit-encarregado" class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 outline-none" value="${item.encarregado}">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-700">Local</label>
+                        <input type="text" id="edit-local" class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 outline-none" value="${item.local}">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-700">Tipo</label>
+                        <select id="edit-tipo" class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 outline-none">
+                            <option value="Montagem" ${item.tipo === 'Montagem' ? 'selected' : ''}>Montagem</option>
+                            <option value="Desmontagem" ${item.tipo === 'Desmontagem' ? 'selected' : ''}>Desmontagem</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-700">Atividade</label>
+                        <textarea id="edit-atividade" class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 outline-none h-24">${item.atividade}</textarea>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2">
+                        <div>
+                            <label class="block font-semibold text-slate-700">Pessoas</label>
+                            <input type="number" id="edit-pessoas" class="w-full border p-2 rounded outline-none" value="${item.pessoas}">
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-slate-700">Faltas</label>
+                            <input type="number" id="edit-faltas" class="w-full border p-2 rounded outline-none" value="${item.faltas}">
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-slate-700">Folgas</label>
+                            <input type="number" id="edit-folgas" class="w-full border p-2 rounded outline-none" value="${item.folgas}">
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-6 flex justify-end gap-3 border-t pt-4">
+                    <button onclick="abrirDetalhes(${item.id})" class="bg-slate-500 text-white px-4 py-2 rounded shadow hover:bg-slate-600 transition">Cancelar</button>
+                    <button onclick="salvarEdicao(${item.id})" class="bg-green-600 text-white px-4 py-2 rounded shadow hover:bg-green-700 transition">💾 Salvar</button>
+                </div>
+            `;
+        }
+
+        function salvarEdicao(id) {
+            let dados = JSON.parse(localStorage.getItem('apontamentos')) || [];
+            const index = dados.findIndex(d => d.id === id);
+            
+            if (index !== -1) {
+                dados[index].encarregado = document.getElementById('edit-encarregado').value;
+                dados[index].local = document.getElementById('edit-local').value;
+                dados[index].tipo = document.getElementById('edit-tipo').value;
+                dados[index].atividade = document.getElementById('edit-atividade').value;
+                dados[index].pessoas = document.getElementById('edit-pessoas').value;
+                dados[index].faltas = document.getElementById('edit-faltas').value;
+                dados[index].folgas = document.getElementById('edit-folgas').value;
+
+                localStorage.setItem('apontamentos', JSON.stringify(dados));
+                
+                carregarCards();
+                abrirDetalhes(id); // Recarrega os detalhes com os dados novos
+            }
         }
 
         function fecharModal() {
@@ -198,7 +267,6 @@
             modal.classList.add('hidden');
         }
 
-        // --- NOVAS FUNÇÕES: IMPORTAR E EXPORTAR JSON (PARA APRESENTAÇÃO) ---
         function exportarJson() {
             const dados = localStorage.getItem('apontamentos') || '[]';
             const blob = new Blob([dados], { type: 'application/json' });
@@ -214,7 +282,6 @@
         function importarDados(event) {
             const file = event.target.files[0];
             if (!file) return;
-            
             const reader = new FileReader();
             reader.onload = function(e) {
                 try {
@@ -231,9 +298,8 @@
                 }
             };
             reader.readAsText(file);
-            event.target.value = ''; // Limpa o input
+            event.target.value = ''; 
         }
-        // -------------------------------------------------------------------
 
         function exportarExcel() {
             const dados = JSON.parse(localStorage.getItem('apontamentos')) || [];
@@ -241,7 +307,6 @@
                 alert('Não há dados para exportar.');
                 return;
             }
-
             let csv = 'ID;Data;Hora;Encarregado;Local;Tipo;Atividade;Pessoas;Faltas;Folgas;Peso Estimado (kg);Materiais\n';
             dados.forEach(d => {
                 const pesoCalc = calcularPesoAproximado(d.materiaisLista);
@@ -249,11 +314,8 @@
                 if (d.materiaisLista) {
                     matsTexto = d.materiaisLista.map(m => `${m.quantidade}x ${m.nome}`).join(' | ');
                 }
-                
-                // CORREÇÃO: Utilizando ponto e vírgula (;) ao invés de vírgula (,) para o Excel BR separar as colunas
                 csv += `"${d.id}";"${d.data}";"${d.hora || ''}";"${d.encarregado}";"${d.local}";"${d.tipo}";"${d.atividade}";"${d.pessoas}";"${d.faltas}";"${d.folgas}";"${pesoCalc.toFixed(2).replace('.', ',')}";"${matsTexto}"\n`;
             });
-
             const blob = new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
