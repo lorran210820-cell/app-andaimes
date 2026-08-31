@@ -10,7 +10,7 @@
     
     <div>
         <div class="flex justify-center mb-6 mt-2">
-            <img src="Logo.png" alt="Logo da Empresa" class="h-20 object-contain">
+            <img src="Logo.png" alt="Logo da Empresa" class="h-20 object-contain" onerror="this.style.display='none'">
         </div>
 
         <h1 class="text-xl font-bold text-slate-800 mb-1 text-center">Portal do Encarregado</h1>
@@ -41,6 +41,13 @@
 
             <button onclick="abrirMeusApontamentos()" class="w-full bg-slate-700 text-white p-4 rounded-xl font-bold hover:bg-slate-800 transition flex items-center justify-center gap-2 shadow">
                 📋 Verificar Meus Apontamentos
+            </button>
+
+            <hr class="my-2 border-slate-200">
+
+            <!-- NOVO BOTÃO DE EXPORTAÇÃO PARA A APRESENTAÇÃO -->
+            <button onclick="exportarJson()" class="w-full bg-indigo-100 text-indigo-700 border border-indigo-300 p-3 rounded-xl font-bold hover:bg-indigo-200 transition flex items-center justify-center gap-2 shadow-sm text-sm">
+                💾 Exportar Backup (Enviar para o Gestor)
             </button>
         </div>
 
@@ -113,7 +120,9 @@
                     </div>
                 </div>
 
-                <button type="submit" id="btnEnviar" class="w-full bg-blue-600 text-white p-3 rounded-lg font-bold hover:bg-blue-700 transition duration-150">Salvar Apontamento</button>
+                <button type="submit" id="btnEnviar" class="w-full bg-blue-600 text-white p-3 rounded-lg font-bold hover:bg-blue-700 transition duration-150 flex justify-center items-center gap-2">
+                    Salvar Apontamento
+                </button>
             </form>
         </div>
 
@@ -144,7 +153,6 @@
             "Jose Carlos Assuncao Teles", "Andrewaldo Santos Cruz"
         ];
 
-        // ATIVIDADES ATUALIZADAS
         const atividades = [
             "Finalização das Escadas",
             "Montagem de Andaime na Torre da CWA-297",
@@ -352,6 +360,7 @@
             document.getElementById('telaFormulario').classList.remove('hidden');
         }
 
+        // COMPRESSÃO AGRESSIVA: maxWidth de 500px e quality de 40% (0.4) para não estourar o localStorage
         function processarFoto(file) {
             return new Promise((resolve) => {
                 if (!file) return resolve(null);
@@ -362,16 +371,31 @@
                     img.src = event.target.result;
                     img.onload = () => {
                         const canvas = document.createElement('canvas');
-                        const maxWidth = 800;
+                        const maxWidth = 500; 
                         const scale = maxWidth / img.width;
                         canvas.width = maxWidth;
                         canvas.height = img.height * scale;
                         const ctx = canvas.getContext('2d');
                         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                        resolve(canvas.toDataURL('image/jpeg', 0.6));
+                        resolve(canvas.toDataURL('image/jpeg', 0.4)); 
                     };
                 };
             });
+        }
+
+        // FUNÇÃO DE BACKUP PARA O GESTOR
+        function exportarJson() {
+            const dados = localStorage.getItem('apontamentos') || '[]';
+            if (dados === '[]') return alert("Nenhum apontamento para exportar ainda.");
+            
+            const blob = new Blob([dados], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `backup_apontamentos_celular_${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
         }
 
         document.getElementById('formApontamento').addEventListener('submit', async function(e) {
@@ -395,8 +419,11 @@
             }
 
             const btn = document.getElementById('btnEnviar');
-            btn.innerText = 'Salvando...';
+            const textoOriginalBtn = btn.innerText;
+            btn.innerHTML = '⏳ Processando e Salvando...';
             btn.disabled = true;
+            btn.classList.replace('bg-blue-600', 'bg-slate-400');
+            btn.classList.replace('hover:bg-blue-700', 'hover:bg-slate-500');
 
             let atividadeFinal = selectAtividade.value;
             if (atividadeFinal === 'manual') atividadeFinal = inputManual.value;
@@ -452,11 +479,13 @@
                 localStorage.setItem('apontamentos', JSON.stringify(dadosSalvos));
                 voltarParaMenu();
             } catch (err) {
-                alert('Erro: Memória do navegador cheia!');
+                alert('Erro: Memória do celular cheia! Você tirou muitas fotos. Exporte o backup e limpe os dados antigos.');
             }
 
-            btn.innerText = 'Salvar Apontamento';
+            btn.innerText = textoOriginalBtn;
             btn.disabled = false;
+            btn.classList.replace('bg-slate-400', 'bg-blue-600');
+            btn.classList.replace('hover:bg-slate-500', 'hover:bg-blue-700');
         });
     </script>
 </body>
