@@ -10,7 +10,7 @@
     
     <div class="flex flex-col md:flex-row justify-between items-center mb-8 border-b pb-4 bg-white p-4 rounded-lg shadow-sm gap-4">
         <div class="flex items-center gap-4">
-            <img src="Logo.png" alt="Logo da Empresa" class="h-16 object-contain">
+            <img src="Logo.png" alt="Logo da Empresa" class="h-16 object-contain" onerror="this.style.display='none'">
             <h1 class="text-2xl font-bold text-slate-800">Painel de Acompanhamento</h1>
         </div>
 
@@ -19,8 +19,19 @@
                 <label for="filtroData" class="text-xs font-semibold text-slate-600">Filtrar Data:</label>
                 <input type="date" id="filtroData" class="bg-white border rounded px-2 py-1 text-sm font-medium text-slate-800" onchange="carregarCards()">
             </div>
+            
+            <!-- Botões para a Apresentação -->
+            <button onclick="exportarJson()" class="bg-indigo-600 text-white px-3 py-2 rounded-lg text-sm font-semibold hover:bg-indigo-700 transition">
+                ⬇️ Baixar Backup (JSON)
+            </button>
+            
+            <label for="importJson" class="bg-blue-600 text-white px-3 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 transition cursor-pointer">
+                ⬆️ Carregar Apontamentos
+            </label>
+            <input type="file" id="importJson" class="hidden" accept=".json" onchange="importarDados(event)">
+
             <button onclick="exportarExcel()" class="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-green-700 flex items-center gap-2 transition">
-                Exportar Excel (CSV)
+                📊 Exportar Excel (CSV)
             </button>
         </div>
     </div>
@@ -48,16 +59,13 @@
                 const qtd = parseInt(item.quantidade) || 0;
 
                 if (nome.includes('tubo')) {
-                    // Extrai os metros do nome (ex: "Tubo 1,50m" vira 1.50)
                     const matchMetros = item.nome.match(/(\d+,\d+|\d+)/);
                     if (matchMetros) {
                         const metros = parseFloat(matchMetros[0].replace(',', '.'));
-                        // 3,40 kg por metro por tubo
                         const pesoTubo = metros * 3.40;
                         pesoTotal += pesoTubo * qtd;
                     }
                 } else {
-                    // Demais itens (braçadeiras, sapatas, pranchas, escadas, etc.) consideram 0,90 kg cada
                     pesoTotal += 0.90 * qtd;
                 }
             });
@@ -75,7 +83,7 @@
             });
 
             if (dadosFiltrados.length === 0) {
-                grid.innerHTML = `<p class="text-slate-500 col-span-full text-center py-20 bg-white rounded-xl shadow">Nenhum apontamento encontrado para a data selecionada.</p>`;
+                grid.innerHTML = `<p class="text-slate-500 col-span-full text-center py-20 bg-white rounded-xl shadow border border-dashed">Nenhum apontamento encontrado para a data selecionada.</p>`;
                 return;
             }
 
@@ -157,7 +165,6 @@
                     <div class="bg-amber-50 p-2 rounded border">Folgas/CT: <strong>${item.folgas}</strong></div>
                 </div>
 
-                <!-- Destaque do Peso Calculado -->
                 <div class="bg-blue-50 border border-blue-200 p-3 rounded-lg flex justify-between items-center">
                     <span class="text-xs font-bold text-blue-900 uppercase">Peso Total Estimado do Andaime:</span>
                     <span class="text-lg font-extrabold text-blue-700">${pesoCalc.toFixed(2)} kg</span>
@@ -191,6 +198,43 @@
             modal.classList.add('hidden');
         }
 
+        // --- NOVAS FUNÇÕES: IMPORTAR E EXPORTAR JSON (PARA APRESENTAÇÃO) ---
+        function exportarJson() {
+            const dados = localStorage.getItem('apontamentos') || '[]';
+            const blob = new Blob([dados], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `backup_andaimes_${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+
+        function importarDados(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const dadosImportados = JSON.parse(e.target.result);
+                    if (Array.isArray(dadosImportados)) {
+                        localStorage.setItem('apontamentos', JSON.stringify(dadosImportados));
+                        alert('Dados importados com sucesso! A tela será atualizada.');
+                        carregarCards();
+                    } else {
+                        alert('Arquivo inválido. Certifique-se de que é um arquivo JSON gerado pelo sistema.');
+                    }
+                } catch (err) {
+                    alert('Erro ao ler o arquivo. Ele pode estar corrompido.');
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = ''; // Limpa o input
+        }
+        // -------------------------------------------------------------------
+
         function exportarExcel() {
             const dados = JSON.parse(localStorage.getItem('apontamentos')) || [];
             if (dados.length === 0) {
@@ -205,8 +249,9 @@
                 if (d.materiaisLista) {
                     matsTexto = d.materiaisLista.map(m => `${m.quantidade}x ${m.nome}`).join(' | ');
                 }
-
-                csv += `"${d.id}","${d.data}","${d.hora || ''}","${d.encarregado}","${d.local}","${d.tipo}","${d.atividade}","${d.pessoas}","${d.faltas}","${d.folgas}","${pesoCalc.toFixed(2)}","${matsTexto}"\n`;
+                
+                // CORREÇÃO: Utilizando ponto e vírgula (;) ao invés de vírgula (,) para o Excel BR separar as colunas
+                csv += `"${d.id}";"${d.data}";"${d.hora || ''}";"${d.encarregado}";"${d.local}";"${d.tipo}";"${d.atividade}";"${d.pessoas}";"${d.faltas}";"${d.folgas}";"${pesoCalc.toFixed(2).replace('.', ',')}";"${matsTexto}"\n`;
             });
 
             const blob = new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' });
